@@ -80,7 +80,7 @@ func Load() (*Config, error) {
 
 	edited := false
 	if config.Secrets.RedirectURI == "" {
-		config.Secrets.RedirectURI = "localhost:36793/callback"
+		config.Secrets.RedirectURI = "https://keyvie.github.io/spotify-tools"
 		edited = true
 	}
 	if edited {

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/keyvie/spotify-tools/internal/app"
@@ -63,12 +64,38 @@ func BuildAccountCommand(container *app.Container) *cli.Command {
 					fmt.Scanln(&code)
 					fmt.Println("")
 
-					token, err := oauth.ExchangeCodeForToken(code)
+					tokenData, err := oauth.ExchangeCodeForToken(code)
 					if err != nil {
 						return err
 					}
-					fmt.Println("Account added successfully", token)
-					
+					if tokenData.TokenType != "Bearer" {
+						return errors.New("unexpected token type")
+					}
+					client := spotify.NewClient(tokenData.AccessToken)
+					ctx, cancel := spotify.MakeContext()
+					defer cancel()
+
+					userData, err := client.CurrentUser(ctx)
+					if err != nil {
+						return err
+					}
+
+					if err := config.Lock(); err != nil {
+						return err
+					}
+					defer config.Unlock()
+					cfg, err = config.Load()
+					if err != nil {
+						return err
+					}
+					cfg.Accounts[userData.ID] = config.ConfigAccount{
+						DisplayName:  userData.DisplayName,
+						AccessToken:  tokenData.AccessToken,
+						RefreshToken: tokenData.RefreshToken,
+						Expiry:       tokenData.Expiry.Unix(),
+					}
+					config.Save(cfg)
+					fmt.Printf("Added %s (%s) successfully\n", userData.ID, userData.DisplayName)
 					return nil
 				},
 			},

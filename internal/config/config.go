@@ -5,7 +5,7 @@ var Path = DefaultPath
 
 type Config struct {
 	Secrets  ConfigSecrets `yaml:"secrets"`
-	Accounts []ConfigAccount `yaml:"accounts"`
+	Accounts map[string]ConfigAccount `yaml:"accounts"`
 }
 
 type ConfigSecrets struct {
@@ -15,9 +15,8 @@ type ConfigSecrets struct {
 }
 
 type ConfigAccount struct {
-	Name         string `yaml:"name"`
-	Username     string `yaml:"username"`
-	Token        string `yaml:"token"`
+	DisplayName  string `yaml:"display_name"`
+	AccessToken  string `yaml:"access_token"`
 	RefreshToken string `yaml:"refresh_token"`
-	ExpiresAt    int64  `yaml:"expires_at"`
+	Expiry       int64  `yaml:"expiry"`
 }
