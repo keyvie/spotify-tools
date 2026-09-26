@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const code = new URLSearchParams(location.search).get("code");
+document.body.textContent = code || "No code";
+</script>
+</body>
+</html>
