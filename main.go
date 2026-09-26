@@ -24,6 +24,7 @@ func main() {
 
 		Commands: []*cli.Command{
 			cmd.BuildAccountCommand(container),
+			cmd.BuildAutomationCommand(container),
 			cmd.BuildSecretCommand(container),
 			cmd.BuildVersionCommand(container),
 		},

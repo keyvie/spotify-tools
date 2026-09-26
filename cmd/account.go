@@ -88,7 +88,8 @@ func BuildAccountCommand(container *app.Container) *cli.Command {
 					if err != nil {
 						return err
 					}
-					cfg.Accounts[userData.ID] = config.ConfigAccount{
+					cfg.Accounts[userData.ID] = config.Account{
+						ID:           userData.ID,
 						DisplayName:  userData.DisplayName,
 						AccessToken:  tokenData.AccessToken,
 						RefreshToken: tokenData.RefreshToken,

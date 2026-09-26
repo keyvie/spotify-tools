@@ -78,12 +78,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	edited := false
-	if config.Secrets.RedirectURI == "" {
-		config.Secrets.RedirectURI = "https://keyvie.github.io/spotify-tools"
-		edited = true
-	}
-	if edited {
+	if normalize(&config) {
 		if err := Save(&config); err != nil {
 			return nil, err
 		}
@@ -106,3 +101,23 @@ func Save(config *Config) error {
 	return os.WriteFile(Path, fileData, 0600)
 }
 
+func normalize(config *Config) bool {
+	edited := false
+
+	if config.Secrets.RedirectURI == "" {
+		config.Secrets.RedirectURI = "https://keyvie.github.io/spotify-tools"
+		edited = true
+	}
+
+	if config.Accounts == nil {
+		config.Accounts = make(map[string]Account)
+		edited = true
+	}
+
+	if config.Automations == nil {
+		config.Automations = make(map[string]Automation)
+		edited = true
+	}
+
+	return edited
+}
