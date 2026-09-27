@@ -6,18 +6,16 @@ import (
 	"errors"
 
 	"github.com/keyvie/spotify-tools/internal/app"
+	"github.com/keyvie/spotify-tools/internal/automations"
 	"github.com/keyvie/spotify-tools/internal/config"
 	"github.com/keyvie/spotify-tools/internal/spotify"
 
-	sp "github.com/zmb3/spotify/v2"
 	"github.com/urfave/cli/v3"
 	"github.com/manifoldco/promptui"
 )
 
-func SelectAPlaylist(account *config.Account) (*sp.SimplePlaylist, error) {
+func SelectAPlaylist(ctx context.Context, account *config.Account) (*spotify.Playlist, error) {
 	client := spotify.NewClient(account.AccessToken)
-	ctx, cancel := spotify.MakeContext()
-	defer cancel()
 
 	currentUser, err := client.CurrentUser(ctx)
 	if err != nil {
@@ -29,12 +27,12 @@ func SelectAPlaylist(account *config.Account) (*sp.SimplePlaylist, error) {
 		return nil, fmt.Errorf("Failed to fetch playlists: %w", err)
 	}
 
-	if len(playlists.Playlists) == 0 {
+	if len(playlists) == 0 {
 		return nil, errors.New("no playlists found")
 	}
 
-	var items []sp.SimplePlaylist
-	for _, p := range playlists.Playlists {
+	var items []spotify.Playlist
+	for _, p := range playlists {
 		if p.Owner.ID == currentUser.ID || p.Collaborative {
 			items = append(items, p)
 		}
@@ -82,7 +80,7 @@ func BuildAutomationCommand(container *app.Container) *cli.Command {
 					}
 
 					for name, automation := range cfg.Automations {
-						if automation.Account == account.ID {
+						if automation.AccountID == account.ID {
 							fmt.Printf("Name: %s, Type: %s, Enabled: %t\n", name, automation.Type, automation.Enabled)
 						}
 					}
@@ -129,14 +127,14 @@ func BuildAutomationCommand(container *app.Container) *cli.Command {
 
 					switch automationType {
 						case "sorter":
-							playlist, err := SelectAPlaylist(account)
+							playlist, err := SelectAPlaylist(ctx, account)
 							if err != nil {
 								return err
 							}
 
 							sortOrders := []string{
-								"Date Added (Newest First)",
-								"Date Added (Oldest First)",
+								automations.OrderDateAddedNewestFirst,
+								automations.OrderDateAddedOldestFirst,
 							}
 							prompt := promptui.Select{
 								Label: "Select an order to sort the playlist in",
@@ -157,10 +155,12 @@ func BuildAutomationCommand(container *app.Container) *cli.Command {
 							}
 
 							cfg.Automations[name] = config.Automation{
-								Type:    "sorter",
-								Account: account.ID,
-								Enabled: true,
-								Settings: map[string]any{
+								Type:    	"sorter",
+								AccountID: 	account.ID,
+								Enabled: 	true,
+								Interval: 	3600,
+								LastRunAt: 	0,
+								Options: 	map[string]any{
 									"playlist_id": playlist.ID,
 									"order": sortOrder,
 								},
@@ -175,6 +175,36 @@ func BuildAutomationCommand(container *app.Container) *cli.Command {
 					}
 
 					fmt.Println("Automation task added")
+					return nil
+				},
+			},
+			{
+				Name:  "run",
+				Usage: "Run an automation task immediately",
+				ArgsUsage: "<name>",
+				Arguments: []cli.Argument{
+					&cli.StringArg{Name: "name"},
+				},
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					name := cmd.StringArg("name")
+					if name == "" {
+						return errors.New("automation name is required")
+					}
+
+					automation, err := automations.Get(name)
+					if err != nil {
+						return fmt.Errorf("failed to get automation %s: %w", name, err)
+					}
+
+					_, err = app.GetAccount(automation.Account.ID)
+					if err != nil {
+						return err
+					}
+
+					if err := automation.Run(true); err != nil {
+						return fmt.Errorf("failed to run automation %s: %w", name, err)
+					}
+					fmt.Println("Automation task executed")
 					return nil
 				},
 			},

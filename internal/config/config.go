@@ -24,8 +24,10 @@ type Account struct {
 }
 
 type Automation struct {
-	Type     string         `yaml:"type"`
-	Account  string         `yaml:"account"`
-	Enabled  bool   		`yaml:"enabled"`
-	Settings map[string]any `yaml:"settings"`
+	Type     	string        	`yaml:"type"`
+	AccountID  	string         	`yaml:"account_id"`
+	Enabled  	bool   			`yaml:"enabled"`
+	Interval 	int64 			`yaml:"interval"`
+	LastRunAt 	int64 			`yaml:"last_run_at"`
+	Options 	map[string]any 	`yaml:"options"`
 }

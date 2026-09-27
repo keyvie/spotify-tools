@@ -72,9 +72,6 @@ func BuildAccountCommand(container *app.Container) *cli.Command {
 						return errors.New("unexpected token type")
 					}
 					client := spotify.NewClient(tokenData.AccessToken)
-					ctx, cancel := spotify.MakeContext()
-					defer cancel()
-
 					userData, err := client.CurrentUser(ctx)
 					if err != nil {
 						return err

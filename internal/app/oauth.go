@@ -8,17 +8,13 @@ import (
 	"github.com/keyvie/spotify-tools/internal/config"
 )
 
-func RefreshAccountToken(id string) error {
+func RefreshAccountToken(account config.Account) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
-	account, exists := cfg.Accounts[id]
-	if !exists {
-		return errors.New("Account not found")
-	}
 	
-	if time.Now().Unix() < account.Expiry {
+	if time.Now().Unix() - account.Expiry > 60 {
 		return nil
 	}
 
@@ -60,7 +56,7 @@ func RefreshAccountToken(id string) error {
 	if err != nil {
 		return err
 	}
-	cfg.Accounts[id] = account
+	cfg.Accounts[account.ID] = account
 	config.Save(cfg)
 	return nil
 }

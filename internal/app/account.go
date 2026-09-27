@@ -27,16 +27,21 @@ func GetAccount(id string) (*config.Account, error) {
 	if id == "" {
 		if len(cfg.Accounts) == 1 {
 			for _, data := range cfg.Accounts {
-				account := data
-				return &account, nil
+				if err := RefreshAccountToken(data); err != nil {
+					return nil, err
+				}
+				return &data, nil
 			}
 		}
 
 		return nil, errors.New("multiple accounts configured, specify one with --account")
 	}
 
-	if account, exists := cfg.Accounts[id]; exists {
-		return &account, nil
+	if data, exists := cfg.Accounts[id]; exists {
+		if err := RefreshAccountToken(data); err != nil {
+			return nil, err
+		}
+		return &data, nil
 	}
 
 	return nil, fmt.Errorf("account with ID %s does not exist", id)
